@@ -2,18 +2,20 @@
 # Motion Planning using RRT and RRT*
 
 ## I. Overview :
+
 <img src=imgs/rrtvrrtstar.png height="385" width="565" > <p></p>
+Figure 1: RRT* vs RRT implementation as visualized on RVIZ.
 
 The goal of this lab project was to explore Sampling based algorithms: RRT and its variants. Through this project, we implemented a binary occupancy grid (0 for free, 1 for occupied), and processed the Hokuyu 2D Lidar scans at a refresh rate of 25ms.
 
 
 ### RRT Pseudocode
 
-![rrt_algo](imgs/rrt_algo.png)
+Figure 2: ![rrt_algo](imgs/rrt_algo.png)
 
 The pseudocode of the basic version of RRT that we used is listed as above. As for RRT*, we used the pseudocode mentioned below.
 
-![rrt_algo](imgs/rrt_star_algo.png)
+Figure 3: ![rrt_algo](imgs/rrt_star_algo.png)
 
 ### F1TENTH RRT vs. Generic RRT
 
