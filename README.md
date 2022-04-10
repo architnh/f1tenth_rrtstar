@@ -11,11 +11,11 @@ The goal of this lab project was to explore Sampling based algorithms: RRT and i
 
 ### RRT Pseudocode
 
-Figure 2: ![rrt_algo](imgs/rrt_algo.png)
+![rrt_algo](imgs/rrt_algo.png)
 
 The pseudocode of the basic version of RRT that we used is listed as above. As for RRT*, we used the pseudocode mentioned below.
 
-Figure 3: ![rrt_algo](imgs/rrt_star_algo.png)
+![rrt_algo](imgs/rrt_star_algo.png)
 
 ### F1TENTH RRT vs. Generic RRT
 
