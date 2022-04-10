@@ -2,6 +2,7 @@
 # Motion Planning using RRT and RRT*
 
 ## I. Overview :
+<img src=imgs/rrtvrrtstar.png height="385" width="565" > <p></p>
 
 The goal of this lab project was to explore Sampling based algorithms: RRT and its variants. Through this project, we implemented a binary occupancy grid (0 for free, 1 for occupied), and processed the Hokuyu 2D Lidar scans at a refresh rate of 25ms.
 
@@ -20,7 +21,7 @@ In general, RRT is often used as a global planner where the tree is kept through
 
 ## IV. RRT vs. RRT* 
 A comparison of the output we obtained from RRT* and RRT algorithm that we implemented is shown below.<p></p>
-<img src=imgs/rrtvrrtstar.png height="385" width="565" > <p></p>
+
 
 RRT* introduces two major improvements over RRT - <p></p>
 1) Each node is associated with its cost. This is a function which measures the distance from the goal point. The goal of the algorithm is to optimize the tree and reduce this cost. <p></p>
