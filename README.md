@@ -1,6 +1,3 @@
-THIS PAGE IS UNDER CONSTRUCTION. 
-
-
 
 # Motion Planning using RRT and RRT*
 
@@ -23,6 +20,7 @@ In general, RRT is often used as a global planner where the tree is kept through
 
 ## IV. RRT vs. RRT* 
 A comparison of the output we obtained from RRT and RRT* algorithm that we implemented is shown below.
+<img src=imgs/rrtvrrtstar.png height="60" width="60" >
 ![Comparison](imgs/rrtvrrtstar.png)
 
 [RRT](https://www.youtube.com/watch?v=llHCRqwIllM) vs. [RRT*](https://www.youtube.com/watch?v=llHCRqwIllM).
