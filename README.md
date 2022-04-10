@@ -20,9 +20,9 @@ In general, RRT is often used as a global planner where the tree is kept through
 
 ## IV. RRT vs. RRT* 
 A comparison of the output we obtained from RRT and RRT* algorithm that we implemented is shown below.<p></p>
-<img src=imgs/rrtvrrtstar.png height="760" width="1130" > <p></p>
+<img src=imgs/rrtvrrtstar.png height="385" width="565" > <p></p>
 
-Videos-
+Videos- <p></p>
 [RRT](https://www.youtube.com/watch?v=llHCRqwIllM) <p></p>
 [RRT*](https://www.youtube.com/watch?v=llHCRqwIllM)
 
