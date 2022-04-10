@@ -1,10 +1,13 @@
+THIS PAGE IS UNDER CONSTRUCTION. 
+
+
+
 # Motion Planning using RRT and RRT*
 
 ## I. Overview :
 
 The goal of this lab project was to explore Sampling based algorithms: RRT and its variants. Through this project, we implemented a binary occupancy grid (0 for free, 1 for occupied), and processed the Hokuyu 2D Lidar scans at a refresh rate of 25ms.
 
-[this](https://www.youtube.com/watch?v=llHCRqwIllM).
 
 ### RRT Pseudocode
 
@@ -37,7 +40,7 @@ By this point, you should be pretty comfortable using the simulator to test your
 
 After you've found a path to your goal with RRT, there are different algorithms that you could use to follow that trajectory. 
 ### Hints
-
+[this](https://www.youtube.com/watch?v=llHCRqwIllM).
 Think about how you could change the way that you're sampling the free space to speed up the process of finding a path to the goal. 
 
 
