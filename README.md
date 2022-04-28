@@ -30,7 +30,7 @@ A comparison of the output we obtained from RRT* and RRT algorithm that we imple
 2) At each iteration, the vicinity of node being sampled is checked for nearby nodes on the tree which can be rewired to reduce the path traversed. If such nodes exist, they are rewired and the net cost of reaching the node is reduced. 
 
 ### Videos- <p></p>
-[RRT](https://youtu.be/u7Lv9G6eQF8) <p></p>
+[RRT](https://youtu.be/u7Lv9G6eQF8) &emsp;
 [RRT*](https://youtu.be/NfnwbfQKN34) <p></p>
 
 Because of the way the algorithm works, it goes on improving itself with every iteration. This results in a much cleaner, smaller path from the start to the target. Because the distance between two nodes is kept static and predefined for our problem, we can say with certainty that the number of intermediate nodes connecting the start to the goal is much lesser in RRT* as against RRT. RRT* also plans a straighter and cleaner path which is not haphazard. This allowed us to significantly increase the speed of the car during loop racing. It reduced the lap time significantly. We observed a considerable difference in the performance on straights and turns.
