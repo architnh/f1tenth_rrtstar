@@ -3,7 +3,7 @@
 
 ## I. Overview :
 
-<img src=imgs/rrtvrrtstar.png height="385" width="565" > <p></p>
+<img src=imgs/rrtvsrrtstar.gif height="385" width="565" > <p></p>
 Figure 1: RRT* vs RRT implementation as visualized on RVIZ.
 
 The goal of this lab project was to explore Sampling based algorithms: RRT and its variants. Through this project, we implemented a binary occupancy grid (0 for free, 1 for occupied), and processed the Hokuyu 2D Lidar scans at a refresh rate of 25ms.
