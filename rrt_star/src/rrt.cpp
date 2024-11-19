@@ -432,19 +432,20 @@ std::vector<RRT_Node> RRT::perform_rrt(){
             collision = check_collision(tree[x_nearest], x_new); //Check if the random node collides with the wall
             if(collision == false){
                 x_new.cost = cost(tree, x_new);
-                const auto near_neighbour_indices = near(tree, x_new);
+                const auto near_neighbour_indices = near(tree, x_new); // Start performing RRT*
                 std::vector<bool> is_near_neighbor_collided;
-                int best_neighbor = x_new.parent;
-                for (const int near_node_index: near_neighbour_indices) {
-                    if (check_collision(tree[near_node_index], x_new)) {
-                        is_near_neighbor_collided.push_back(true);
-                        continue;
+                int best_neighbor = x_new.parent; // initialize with the current parent of x_new
+                for (const int near_node_index: near_neighbour_indices) { // Check every neighbor node in vicinity of current node
+                    if (check_collision(tree[near_node_index], x_new)) { // check if clear connectivity exists between new node and nearest neighbor
+                        is_near_neighbor_collided.push_back(true); // maintain true/false vector of the neighbors
+                        continue; // evaluate other neighbors instead
                     }
                     is_near_neighbor_collided.push_back(false);
 
-                    double cost = tree[near_node_index].cost + line_cost(tree[near_node_index], x_new);
+                    double cost = tree[near_node_index].cost + line_cost(tree[near_node_index], x_new); // claculate line cost for each new neighbor and add it to parent cost
 
-                    if (cost < x_new.cost) {
+                    if (cost < x_new.cost) { 
+			// if there is a node in vicinity that has a clear connectivity, then update the cost, parent and store the best neighbor index
                         x_new.cost = cost;
                         x_new.parent = near_node_index;
                         best_neighbor = near_node_index;
@@ -452,9 +453,11 @@ std::vector<RRT_Node> RRT::perform_rrt(){
                 }
 
                 for (int i = 0; i < near_neighbour_indices.size(); i++) {
-                    if (is_near_neighbor_collided[i] || i == best_neighbor) {
+                    if (is_near_neighbor_collided[i] || i == best_neighbor) { // ensure that nearest neighbor isnt colliding with new node, or isnt self
                         continue;
-                    }
+                    } 
+		    // Reroute other neighbors to connect with the newest node if they are have a lower cost than their connection scheme.
+		    // This allows more efficient and directed path planning, with a well definied distance cost
                     if (tree[near_neighbour_indices[i]].cost > x_new.cost + line_cost(x_new, tree[near_neighbour_indices[i]])) {
                         tree[near_neighbour_indices[i]].parent = current_node_index;
                     }
@@ -500,8 +503,6 @@ void RRT::pose_callback(const nav_msgs::msg::Odometry::ConstSharedPtr pose_msg) 
     // Args:
     //    pose_msg (*PoseStamped): pointer to the incoming pose message
     // Returns:
-    //
-    //std::cout<<"***in pose callback***"<<std::endl;
     // tree as std::vector
     current_car_pose = *pose_msg;
 
@@ -512,18 +513,10 @@ void RRT::pose_callback(const nav_msgs::msg::Odometry::ConstSharedPtr pose_msg) 
         if((current_time - previous_time).seconds() > update_rate){
             previous_time = current_time;
             found_path = false;
-            //rclcpp::Time atime = rclcpp::Clock().now();
+	    // PERFORM RRT-star here
             final_path_output = perform_rrt();
-            //std::cout<<"final path outputed"<<std::endl;
-            //rclcpp::Time btime = rclcpp::Clock().now();
-            //float tt = (atime - btime).seconds();
-            //std::cout<<"Time to execute RRT*"<<tt<<std::endl;
 
-            //std::cout<<"returned path from rrt"<<std::endl;
         }
-        //std::cout<<"found_path="<<found_path<<std::endl;
-
-
 
         //Convert Local coordinates to global coordinates for pure pursuit
         Eigen::Quaterniond q;
@@ -553,21 +546,15 @@ void RRT::pose_callback(const nav_msgs::msg::Odometry::ConstSharedPtr pose_msg) 
             spline_points_pub->publish(goal_path_points);
 
 
-
-
-            //std::cout<<"in if"<<std::endl;
-            //Send goal point to pure pursuit code
             float distance;
             std::vector<float> local_goal;
-            //std::cout<<"entering for loop"<<std::endl;
+
             for(int q=0;q<final_path_output.size();q++){
                 distance=sqrt( pow(final_path_output[q].x -0,2) +
                 pow(final_path_output[q].y - 0,2));
 
-               // float dist_to_goal = sqrt( pow(final_path_output[q].x -0,2) +
-                //pow(final_path_output[q].y - 0,2));
-                if(distance < (l_value * 0.33)){//} && dist_to_goal < dist_from_goal_to_car){
-                    //std::cout<<"distance = "<<distance<<std::endl;
+                if(distance < (l_value * 0.33)){
+
                     float distance_over_1;
                     int r_return=0;
                     for(int r=0;r<final_path_output.size();r++){
@@ -597,39 +584,19 @@ void RRT::pose_callback(const nav_msgs::msg::Odometry::ConstSharedPtr pose_msg) 
 
                     }
 
-                    //std::cout<<"X: "<<final_x<<std::endl;
-                    //std::cout<<"Y: "<<final_y<<std::endl;
-                    local_goal.push_back(final_x);//final_path_output[q].x);
-                    local_goal.push_back(final_y);//final_path_output[q].y);
+                    local_goal.push_back(final_x);
+                    local_goal.push_back(final_y);
 
-                    //local_goal.push_back(final_path_output[q].x);//final_path_output[q].x);
-                   // local_goal.push_back(final_path_output[q].y);//final_path_output[q].y);
-
-                    //std::cout<<"breaking loop"<<std::endl;
                     break;
                 }
             
-                /*if(q == final_path_output.size()-1){
-                    //std::cout<<"distance = "<<distance<<std::endl;
-                    local_goal.push_back(final_path_output[final_path_output.size()-1].x);
-                    local_goal.push_back(final_path_output[final_path_output.size()-1].y);
-                    //std::cout<<"breaking loop"<<std::endl;
-                }*/ 
             }
 
             //Convert Local coordinates to global coordinates for pure pursuit
-            /*Eigen::Quaterniond q;
-            q.x()= current_car_pose.pose.pose.orientation.x;
-            q.y()= current_car_pose.pose.pose.orientation.y;
-            q.z()= current_car_pose.pose.pose.orientation.z;
-            q.w()= current_car_pose.pose.pose.orientation.w;
-            auto rotation_mat = q.normalized().toRotationMatrix();*/
 
             Eigen::Vector3d shift_coords(local_goal[0], local_goal[1], 0);
             Eigen::Vector3d global_coords = rotation_mat * shift_coords;
 
-            //std::cout<<"current goal Transformed=" << float(global_coords[0]) <<", "<< float(global_coords[1])<<std::endl;
-            //std::cout<<"current goal Not Transformed=" << float(local_goal[0]) <<", "<< float(local_goal[1])<<std::endl;
 
             current_goal.pose.pose.position.x = current_car_pose.pose.pose.position.x + float(global_coords[0]);
             current_goal.pose.pose.position.y = current_car_pose.pose.pose.position.y + float(global_coords[1]);
@@ -664,8 +631,6 @@ void RRT::pose_callback(const nav_msgs::msg::Odometry::ConstSharedPtr pose_msg) 
                     Eigen::Vector3d shift_coords(local_goal[0], local_goal[1], 0);
                     Eigen::Vector3d global_coords = rotation_mat * shift_coords;
 
-                    //std::cout<<"current goal Transformed=" << float(global_coords[0]) <<", "<< float(global_coords[1])<<std::endl;
-                    //std::cout<<"current goal Not Transformed=" << float(local_goal[0]) <<", "<< float(local_goal[1])<<std::endl;
 
                     current_goal.pose.pose.position.x = current_car_pose.pose.pose.position.x + float(global_coords[0]);
                     current_goal.pose.pose.position.y = current_car_pose.pose.pose.position.y + float(global_coords[1]);
@@ -686,7 +651,6 @@ void RRT::pose_callback(const nav_msgs::msg::Odometry::ConstSharedPtr pose_msg) 
     catch(...){
         std::cout<<"IN Catch"<<std::endl;
     }
-    //std::cout<<"out"<<std::endl;
 
     //path found as Path message
 }
@@ -701,7 +665,6 @@ std::vector<double> RRT::sample() {
 
     std::vector<double> sampled_point;
 
-    // TODO: fill in this method
     double x_rand = (x_dist(gen) - .5) * occu_grid_x_size  * resolution + (occu_grid_x_size * 0.2 * resolution);
     double y_rand = (y_dist(gen) - .5) * occu_grid_y_size  * resolution;
 
@@ -718,7 +681,6 @@ int RRT::nearest(std::vector<RRT_Node> &tree, std::vector<double> &sampled_point
     //     sampled_point (std::vector<double>): the sampled point in free space
     // Returns:
     //     nearest_node (int): index of nearest node on the tree
-    // Written by: Lenny
 
     int nearest_node = 0;
     float min_dist = 1000.0;
@@ -741,11 +703,6 @@ int RRT::nearest(std::vector<RRT_Node> &tree, std::vector<double> &sampled_point
         nearest_node = i;
       }
     }
-    /*
-    std::cout<<"******************"<<std::endl;
-    std::cout<<"Tree size: "<<tree.size()<<std::endl;
-    std::cout<<"Nearest node: "<<nearest_node<<std::endl;
-    */
 
     return nearest_node; //return parent point
 }
@@ -766,7 +723,6 @@ RRT_Node RRT::steer(RRT_Node &nearest_node, std::vector<double> &sampled_point) 
 
     RRT_Node new_node;
 
-    // TODO: fill in this method
     double dx = sampled_point[0] - nearest_node.x;
     double dy = sampled_point[1] - nearest_node.y;
     double angle = atan2(dy,dx);
@@ -777,14 +733,6 @@ RRT_Node RRT::steer(RRT_Node &nearest_node, std::vector<double> &sampled_point) 
     new_node.x = dx_new + nearest_node.x;
     new_node.y = dy_new + nearest_node.y;
 
-    /*
-    // Debugging stuff
-    std::cout<<"***************************************"<<std::endl;
-    std::cout<<"Nearest point x: "<<nearest_node.x<<"  y: " <<nearest_node.y<<std::endl;
-    std::cout<<"Sampled point x: "<<sampled_point[0]<<"  y: " <<sampled_point[1]<<std::endl;
-    std::cout<<"New point x: "<<new_node.x<<"  y: " <<new_node.y<<std::endl;
-    std::cout<<"^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^"<<std::endl;
-    */
 
     return new_node;
 }
@@ -797,7 +745,6 @@ bool RRT::check_collision(RRT_Node &nearest_node, RRT_Node &new_node) {
     //    new_node (RRT_Node): new node created from steering
     // Returns:
     //    collision (bool): true if in collision, false otherwise
-    // TODO: fill in this method
 
     float x0_f = center_x + (nearest_node.x / resolution) + 0.5; //added 0.5 to round to the proper number
     float y0_f = center_y - (nearest_node.y / resolution) + 0.5;
@@ -811,13 +758,6 @@ bool RRT::check_collision(RRT_Node &nearest_node, RRT_Node &new_node) {
     int x1 = (int)x1_f;
     int y1 = (int)y1_f;
 
-    /*
-    std::cout<<"---START---:"<<std::endl;
-    std::cout<<"x0: "<< x0<<std::endl;
-    std::cout<<"y0: "<< y0<<std::endl;
-    std::cout<<"x1: "<< x1<<std::endl;
-    std::cout<<"y1: "<< y1<<std::endl;
-    */
 
     dx = abs(x1 - x0);
     if (x0 < x1){
@@ -858,84 +798,6 @@ bool RRT::check_collision(RRT_Node &nearest_node, RRT_Node &new_node) {
             y0 = y0 + sy;
         }
     }
-
-    //std::cout<<"collision: "<< collision<<std::endl;
-
-    return collision;
-}
-
-bool RRT::chck_coll(std::vector<double> nearest_node, std::vector<double> new_node) {
-    // This method returns a boolean indicating if the path between the
-    // nearest node and the new node created from steering is collision free
-    // Args:
-    //    nearest_node (RRT_Node): nearest node on the tree to the sampled point
-    //    new_node (RRT_Node): new node created from steering
-    // Returns:
-    //    collision (bool): true if in collision, false otherwise
-    // TODO: fill in this method
-
-    float x0_f = center_x + (nearest_node[0] / resolution) + 0.5; //added 0.5 to round to the proper number
-    float y0_f = center_y - (nearest_node[1] / resolution) + 0.5;
-
-    float x1_f = center_x + (new_node[0] / resolution) + 0.5;
-    float y1_f = center_y - (new_node[1] / resolution) + 0.5;
-
-    int dx, dy, sx, sy, error, e2;
-    int x0 = (int)x0_f;
-    int y0 = (int)y0_f;
-    int x1 = (int)x1_f;
-    int y1 = (int)y1_f;
-
-    /*
-    std::cout<<"---START---:"<<std::endl;
-    std::cout<<"x0: "<< x0<<std::endl;
-    std::cout<<"y0: "<< y0<<std::endl;
-    std::cout<<"x1: "<< x1<<std::endl;
-    std::cout<<"y1: "<< y1<<std::endl;
-    */
-
-    dx = abs(x1 - x0);
-    if (x0 < x1){
-      sx = 1;
-    } else{
-      sx = -1;
-    }
-    dy = -abs(y1 - y0);
-    if (y0 < y1){
-      sy = 1;
-    } else{
-      sy = -1;
-    }
-    error = dx + dy;
-
-    bool collision = false;
-    while(1){
-        if(occu_grid[x0][y0] > 70){
-          collision = true;
-          break;
-        }
-        if(x0 == x1 && y0 == y1){
-          break;
-        }
-        e2 = 2 * error;
-        if(e2 >= dy){
-            if(x0 == x1){
-              break;
-            }
-            error = error + dy;
-            x0 = x0 + sx;
-        }
-        if(e2 <= dx){
-            if(y0 == y1){
-              break;
-            }
-            error = error + dx;
-            y0 = y0 + sy;
-        }
-    }
-
-    //std::cout<<"collision: "<< collision<<std::endl;
-
     return collision;
 }
 
@@ -951,7 +813,6 @@ bool RRT::is_goal(RRT_Node &node, double goal_x, double goal_y) {
     //   close_enough (bool): true if node close enough to the goal
 
     bool close_enough = false;
-    // TODO: fill in this method
     double node_x = node.x;
     double node_y = node.y;
 
@@ -997,14 +858,8 @@ double RRT::cost(std::vector<RRT_Node> &tree, RRT_Node &newnode) {
     //    cost (double): the cost value associated with the node
 
     double cost = 0;
-    //std::cout<<"test"<<std::endl;
-    // TODO: fill in this method
-    //std::cout<<"newnode.parent"<<newnode.parent<<std::endl;
-    //std::cout<<"tree[newnode.parent].x "<<tree[newnode.parent].x<<std::endl;
-    //std::cout<<"tree[newnode.parent].y "<<tree[newnode.parent].y<<std::endl;
-    //std::cout<<"tree[newnode.parent].cost "<<tree[newnode.parent].cost<<std::endl;
     cost = tree[newnode.parent].cost + line_cost(tree[newnode.parent], newnode);
-    //std::cout<<"cost "<<cost<<std::endl;
+
     return cost;
 }
 
@@ -1021,7 +876,7 @@ double RRT::line_cost(RRT_Node &n1, RRT_Node &n2) {
     double n1y = n1.y;
     double n2x = n2.x;
     double n2y = n2.y;      
-    // TODO: fill in this method
+
     line_cost = std::sqrt(std::pow(n1x - n2x, 2) + std::pow(n1y - n2y, 2));
 
     return line_cost;
@@ -1038,7 +893,7 @@ std::vector<int> RRT::near(std::vector<RRT_Node> &tree, RRT_Node &node) {
 
     std::vector<int> neighborhood;
     float search_radius = 1.5; // can be tweaked
-    // TODO:: fill in this method
+
     for(int i=0; i<tree.size(); i++){
         const double distance = sqrt(pow(node.x - tree[i].x, 2) + pow(node.y - tree[i].y, 2));
         if(distance < search_radius){
