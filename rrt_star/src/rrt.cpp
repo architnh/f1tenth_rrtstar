@@ -91,16 +91,20 @@ void RRT::global_goal_callback(const nav_msgs::msg::Odometry::ConstSharedPtr goa
     global_goal = *goal_msg; 
 }
 
+// Bresenham's Line Algorithm for a given origin and goal point in 2D space
 std::vector<std::vector<int>> RRT::bresenhams_line_algorithm(int goal_point[2], int origin_point[2]){
     try{
+        // Initialize start and end coordinates
         int x1 = origin_point[0];
         int y1 = origin_point[1];
         int x2 = goal_point[0];
         int y2 = goal_point[1];
 
+        // Calculate the differences between the coordinates
         int y_diff = y2 - y1;
         int x_diff = x2 - x1;
 
+        // Swap the coordinates if the slope is steep
         if (abs(y_diff) >= abs(x_diff)){
             x1 = origin_point[1];
             y1 = origin_point[0];
@@ -122,6 +126,7 @@ std::vector<std::vector<int>> RRT::bresenhams_line_algorithm(int goal_point[2], 
         y_diff = y2 - y1;
         x_diff = x2 - x1;
 
+        // Initialize the error term to half the difference in x
         int error = int(x_diff / 2);
         float ystep=-1;
         if(y1 < y2){
@@ -132,6 +137,7 @@ std::vector<std::vector<int>> RRT::bresenhams_line_algorithm(int goal_point[2], 
         std::vector<std::vector<int>> output;
         for(int x=x1; x < x2+1 ;x++){
             std::vector<int> coords{x,y};
+            // Swap back the coordinates if the slope was steep
             if (abs(y_diff) > abs(x_diff)){
                 coords[0] = y;
                 coords[1] = x;
@@ -160,8 +166,11 @@ std::vector<std::vector<int>> RRT::bresenhams_line_algorithm(int goal_point[2], 
     }
     
 }
+
+// Function to check if RRT should be activated based on obstacle data. Utilize the Bresenhams line algorithm
 void RRT::check_to_activate_rrt(std::vector<signed char> &obstacle_data){
-    try{    
+    try{
+        // Convert current car pose orientation to a quaternion    
         Eigen::Quaterniond q;
         q.x()= current_car_pose.pose.pose.orientation.x;
         q.y()= current_car_pose.pose.pose.orientation.y;
@@ -170,12 +179,14 @@ void RRT::check_to_activate_rrt(std::vector<signed char> &obstacle_data){
 
         auto rotation_mat = q.normalized().toRotationMatrix();
 
+        // Calculate the goal's local coordinates relative to the current car position
         float x_goal = global_goal.pose.pose.position.x - current_car_pose.pose.pose.position.x;
         float y_goal = global_goal.pose.pose.position.y - current_car_pose.pose.pose.position.y; 
 
         Eigen::Vector3d shift_coords(x_goal, y_goal, 0);
         Eigen::Vector3d local_goal_ = rotation_mat.inverse() * shift_coords;
 
+        // Define the goal and origin points in the grid
         int goal_point[2]={(local_goal_[0]/resolution)+center_x,(local_goal_[1]/resolution)+center_y};
         int origin_point[2]={center_x, center_y};
         std::vector<std::vector<int>> grid_interp_points;
@@ -193,6 +204,8 @@ void RRT::check_to_activate_rrt(std::vector<signed char> &obstacle_data){
         if(add_val_y==0){
             add_val_y=1;
         }
+
+        // Expand the list of interpolation points to account for resolution
         int size_val= grid_interp_points.size();
         for(int i=0;i<size_val;i++){
             for(int j=-add_val_y;j<add_val_y;j++){
@@ -221,6 +234,7 @@ void RRT::check_to_activate_rrt(std::vector<signed char> &obstacle_data){
                 }
             }
         }
+        // Mark the grid points in the occupancy grid
         std::vector<signed char> listed_data(occu_grid_y_size * occu_grid_x_size);
         for(int i=0;i<grid_interp_points.size();i++){
             listed_data[((grid_interp_points[i][1])* occu_grid_x_size) + (grid_interp_points[i][0])]=100;
@@ -249,6 +263,7 @@ void RRT::check_to_activate_rrt(std::vector<signed char> &obstacle_data){
         new_grid.header.stamp=rclcpp::Clock().now();
         new_grid.info.origin = current_car_pose.pose.pose;
 
+        // Adjust the origin of the grid to match the current car position
         Eigen::Vector3d shift_coords1(center_x * resolution, center_y* resolution, 0);
         Eigen::Vector3d shift_in_global_coords = rotation_mat * shift_coords1;
 
@@ -258,6 +273,7 @@ void RRT::check_to_activate_rrt(std::vector<signed char> &obstacle_data){
         new_grid.data= listed_data;
         grid_path_pub->publish(new_grid);
 
+        // Publish whether RRT should be used based on obstacle detection
         auto use_rrt= std_msgs::msg::Bool();
         use_rrt.data = rrt_use_it;
         use_rrt_pub->publish(use_rrt);
@@ -285,7 +301,7 @@ void RRT::scan_callback(const sensor_msgs::msg::LaserScan::ConstSharedPtr scan_m
             x_scan = scan_msg->ranges[i] * cos(scan_msg->angle_increment * i + scan_msg->angle_min) / resolution;
             y_scan = scan_msg->ranges[i] * sin(scan_msg->angle_increment * i + scan_msg->angle_min) / resolution;
 
-            //Make the scans show up larger on the occupancy grid
+            //Make the scans show up larger on the occupancy grid for visualization.
             for(int j=-4 + x_scan;j<4+ x_scan;j++){
                 for(int k=-4 + y_scan;k<4+ y_scan;k++){
                     if(j+center_x >0 && j+center_x <occu_grid_x_size){
@@ -319,6 +335,7 @@ void RRT::scan_callback(const sensor_msgs::msg::LaserScan::ConstSharedPtr scan_m
 
     auto rotation_mat = q.normalized().toRotationMatrix();
 
+    // Apply rotation to shift them in global frame
     Eigen::Vector3d shift_coords(center_x * resolution, center_y* resolution, 0);
     Eigen::Vector3d shift_in_global_coords = rotation_mat * shift_coords;
 
